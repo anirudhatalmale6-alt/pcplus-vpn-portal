@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PC Plus Computing — Secure Remote Access VPN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy-deep:#060e1a;
+  --navy:#0a1628;
+  --navy-mid:#0d1b2a;
+  --navy-light:#111d2e;
+  --navy-lighter:#162538;
+  --accent:#2596be;
+  --accent-glow:rgba(37,150,190,.15);
+  --accent-bright:#3ab4de;
+  --green:#27ae60;
+  --green-glow:rgba(39,174,96,.12);
+  --red:#e74c3c;
+  --orange:#f39c12;
+  --text-primary:#e8edf3;
+  --text-secondary:#8a9bb5;
+  --text-dim:#5a6d85;
+  --card-bg:rgba(17,29,46,.65);
+  --card-border:rgba(37,150,190,.12);
+  --glass:rgba(13,27,42,.7);
+  --radius:12px;
+  --radius-lg:20px;
+  --radius-sm:8px;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{
+  font-family:'Outfit',system-ui,sans-serif;
+  background:var(--navy-deep);
+  color:var(--text-primary);
+  line-height:1.6;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ═══ TOPO PATTERN BG ═══ */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  opacity:.03;
+  background-image:
+    repeating-linear-gradient(0deg,transparent,transparent 50px,rgba(37,150,190,.3) 50px,rgba(37,150,190,.3) 51px),
+    repeating-linear-gradient(90deg,transparent,transparent 50px,rgba(37,150,190,.3) 50px,rgba(37,150,190,.3) 51px);
+}
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(37,150,190,.06),transparent 70%),
+             radial-gradient(ellipse 60% 50% at 80% 100%,rgba(39,174,96,.04),transparent 60%);
+}
+
+.page-wrap{position:relative;z-index:1}
+
+/* ═══ HEADER ═══ */
+.site-header{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:1rem 2rem;
+  background:rgba(6,14,26,.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(37,150,190,.08);
+  display:flex;align-items:center;justify-content:space-between;
+  transition:padding .3s;
+}
+.site-header.scrolled{padding:.6rem 2rem;box-shadow:0 4px 30px rgba(0,0,0,.4)}
+.header-brand{display:flex;align-items:center;gap:.75rem}
+.header-logo{width:36px;height:36px}
+.header-title{font-weight:700;font-size:1.05rem;letter-spacing:.02em;color:var(--text-primary)}
+.header-title span{color:var(--accent)}
+.header-nav{display:flex;gap:2rem;align-items:center}
+.header-nav a{
+  color:var(--text-secondary);font-size:.85rem;font-weight:500;text-decoration:none;
+  letter-spacing:.03em;text-transform:uppercase;
+  transition:color .2s;position:relative;
+}
+.header-nav a::after{
+  content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;
+  background:var(--accent);transition:width .3s;border-radius:1px;
+}
+.header-nav a:hover{color:var(--text-primary)}
+.header-nav a:hover::after{width:100%}
+.header-phone{
+  font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:var(--accent);
+  display:flex;align-items:center;gap:.5rem;
+}
+
+/* ═══ HERO ═══ */
+.hero{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:8rem 2rem 4rem;position:relative;overflow:hidden;
+}
+.hero-grid-overlay{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 20% 50%,rgba(37,150,190,.08) 0%,transparent 50%),
+    radial-gradient(circle at 80% 30%,rgba(39,174,96,.05) 0%,transparent 40%);
+}
+.hero-content{text-align:center;max-width:800px;position:relative}
+
+/* shield animation */
+.shield-container{
+  width:140px;height:140px;margin:0 auto 2.5rem;position:relative;
+}
+.shield-ring{
+  position:absolute;inset:0;border-radius:50%;
+  border:2px solid rgba(37,150,190,.2);
+  animation:shield-pulse 3s ease-in-out infinite;
+}
+.shield-ring:nth-child(2){
+  inset:-12px;border-color:rgba(37,150,190,.1);
+  animation-delay:.5s;
+}
+.shield-ring:nth-child(3){
+  inset:-24px;border-color:rgba(37,150,190,.05);
+  animation-delay:1s;
+}
+@keyframes shield-pulse{
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.05);opacity:.6}
+}
+.shield-icon{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,rgba(37,150,190,.15),rgba(39,174,96,.1));
+  border-radius:50%;border:2px solid rgba(37,150,190,.3);
+  box-shadow:0 0 60px rgba(37,150,190,.15),inset 0 0 30px rgba(37,150,190,.05);
+}
+.shield-icon svg{width:60px;height:60px;filter:drop-shadow(0 0 12px rgba(37,150,190,.4))}
+
+.hero-badge{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.4rem 1rem;border-radius:100px;
+  background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.2);
+  font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:500;
+  color:var(--green);letter-spacing:.05em;text-transform:uppercase;
+  margin-bottom:1.5rem;
+  animation:fadeUp .8s ease both;
+}
+.hero-badge::before{
+  content:'';width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:blink 2s infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.hero h1{
+  font-size:clamp(2.5rem,5vw,4rem);font-weight:800;line-height:1.1;
+  letter-spacing:-.02em;margin-bottom:1rem;
+  animation:fadeUp .8s ease .1s both;
+}
+.hero h1 .gradient-text{
+  background:linear-gradient(135deg,var(--accent-bright),var(--green));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-sub{
+  font-size:1.15rem;color:var(--text-secondary);max-width:560px;margin:0 auto 2.5rem;
+  font-weight:300;line-height:1.7;
+  animation:fadeUp .8s ease .2s both;
+}
+.hero-cta{
+  display:inline-flex;align-items:center;gap:.75rem;
+  padding:1rem 2.5rem;border-radius:100px;
+  background:linear-gradient(135deg,var(--accent),#1e7fa0);
+  color:#fff;font-weight:600;font-size:1rem;
+  text-decoration:none;border:none;cursor:pointer;
+  box-shadow:0 4px 25px rgba(37,150,190,.3),0 0 0 0 rgba(37,150,190,.3);
+  transition:all .3s;letter-spacing:.02em;
+  animation:fadeUp .8s ease .3s both;
+}
+.hero-cta:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 35px rgba(37,150,190,.4),0 0 0 4px rgba(37,150,190,.1);
+}
+.hero-cta svg{width:20px;height:20px;transition:transform .3s}
+.hero-cta:hover svg{transform:translateX(3px)}
+
+.hero-stats{
+  display:flex;justify-content:center;gap:3rem;margin-top:4rem;
+  animation:fadeUp .8s ease .4s both;
+}
+.hero-stat{text-align:center}
+.hero-stat-value{
+  font-family:'IBM Plex Mono',monospace;font-size:1.8rem;font-weight:600;
+  color:var(--accent-bright);
+}
+.hero-stat-label{font-size:.8rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ═══ SECTIONS ═══ */
+section{padding:5rem 2rem}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-label{
+  font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;
+  color:var(--accent);text-transform:uppercase;letter-spacing:.12em;
+  margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;
+}
+.section-label::before{content:'';width:24px;height:2px;background:var(--accent);border-radius:1px}
+.section-title{
+  font-size:clamp(1.8rem,3vw,2.4rem);font-weight:700;letter-spacing:-.01em;
+  margin-bottom:1rem;
+}
+.section-desc{color:var(--text-secondary);max-width:600px;margin-bottom:3rem;font-weight:300;font-size:1.05rem}
+
+/* ═══ DOWNLOAD CARDS ═══ */
+.download-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;
+}
+.dl-card{
+  background:var(--card-bg);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  padding:2rem 1.5rem;text-align:center;
+  transition:all .35s;position:relative;overflow:hidden;
+  backdrop-filter:blur(10px);
+  text-decoration:none;color:var(--text-primary);display:block;
+}
+.dl-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(37,150,190,.05),transparent 60%);
+  opacity:0;transition:opacity .35s;
+}
+.dl-card:hover{
+  border-color:rgba(37,150,190,.3);
+  transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(0,0,0,.3),0 0 0 1px rgba(37,150,190,.1);
+}
+.dl-card:hover::before{opacity:1}
+.dl-card-icon{
+  width:56px;height:56px;margin:0 auto 1.25rem;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(37,150,190,.08);border-radius:var(--radius-sm);
+  border:1px solid rgba(37,150,190,.1);
+}
+.dl-card-icon svg{width:28px;height:28px;color:var(--accent)}
+.dl-card h3{font-size:1rem;font-weight:600;margin-bottom:.35rem}
+.dl-card p{font-size:.78rem;color:var(--text-dim);line-height:1.5}
+.dl-card .dl-badge{
+  display:inline-block;margin-top:1rem;
+  font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:500;
+  color:var(--green);background:rgba(39,174,96,.1);
+  padding:.25rem .75rem;border-radius:100px;border:1px solid rgba(39,174,96,.15);
+}
+.dl-card.linux-card{cursor:default}
+
+/* ═══ SETUP TABS ═══ */
+#setup{background:var(--navy)}
+.setup-tabs{
+  display:flex;gap:.5rem;margin-bottom:2rem;flex-wrap:wrap;
+}
+.setup-tab{
+  padding:.6rem 1.5rem;border-radius:100px;
+  background:transparent;border:1px solid var(--card-border);
+  color:var(--text-secondary);font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:500;
+  cursor:pointer;transition:all .25s;
+}
+.setup-tab:hover{border-color:rgba(37,150,190,.3);color:var(--text-primary)}
+.setup-tab.active{
+  background:rgba(37,150,190,.12);border-color:var(--accent);color:var(--accent-bright);
+}
+.setup-panel{display:none;animation:fadeIn .4s ease}
+.setup-panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.steps{display:flex;flex-direction:column;gap:1.5rem}
+.step{
+  display:flex;gap:1.5rem;align-items:flex-start;
+  padding:1.5rem;border-radius:var(--radius);
+  background:var(--card-bg);border:1px solid var(--card-border);
+  backdrop-filter:blur(10px);
+}
+.step-num{
+  flex-shrink:0;width:40px;height:40px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,rgba(37,150,190,.15),rgba(37,150,190,.05));
+  border:1px solid rgba(37,150,190,.2);border-radius:50%;
+  font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:600;color:var(--accent-bright);
+}
+.step-content h4{font-size:.95rem;font-weight:600;margin-bottom:.3rem}
+.step-content p{font-size:.88rem;color:var(--text-secondary);line-height:1.6}
+.step-content code{
+  font-family:'IBM Plex Mono',monospace;font-size:.8rem;
+  background:rgba(37,150,190,.08);padding:.15rem .5rem;
+  border-radius:4px;color:var(--accent-bright);border:1px solid rgba(37,150,190,.1);
+}
+
+/* ═══ QR SECTION ═══ */
+.qr-section{
+  background:linear-gradient(135deg,var(--navy-mid),var(--navy-light));
+  border:1px solid var(--card-border);border-radius:var(--radius-lg);
+  padding:3rem;display:flex;align-items:center;gap:3rem;
+  margin-top:3rem;
+}
+.qr-visual{
+  flex-shrink:0;width:180px;height:180px;
+  background:rgba(37,150,190,.05);border:2px dashed rgba(37,150,190,.2);
+  border-radius:var(--radius);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;
+}
+.qr-visual svg{width:48px;height:48px;color:var(--text-dim);opacity:.5}
+.qr-visual span{font-size:.72rem;color:var(--text-dim);text-align:center;padding:0 1rem}
+.qr-info h3{font-size:1.3rem;font-weight:700;margin-bottom:.75rem}
+.qr-info p{color:var(--text-secondary);font-size:.95rem;line-height:1.7;margin-bottom:.5rem}
+.qr-info .qr-highlight{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.4rem .9rem;border-radius:var(--radius-sm);
+  background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.15);
+  font-size:.82rem;color:var(--green);margin-top:.5rem;
+}
+
+/* ═══ SECURITY TIPS ═══ */
+#security{background:var(--navy-deep)}
+.tips-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem}
+.tip-card{
+  padding:1.75rem;border-radius:var(--radius);
+  background:var(--card-bg);border:1px solid var(--card-border);
+  backdrop-filter:blur(10px);transition:border-color .3s;
+}
+.tip-card:hover{border-color:rgba(37,150,190,.25)}
+.tip-icon{
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--radius-sm);margin-bottom:1rem;
+}
+.tip-icon.red{background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.15)}
+.tip-icon.red svg{color:var(--red)}
+.tip-icon.orange{background:rgba(243,156,18,.1);border:1px solid rgba(243,156,18,.15)}
+.tip-icon.orange svg{color:var(--orange)}
+.tip-icon.blue{background:rgba(37,150,190,.1);border:1px solid rgba(37,150,190,.15)}
+.tip-icon.blue svg{color:var(--accent)}
+.tip-icon.green{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.15)}
+.tip-icon.green svg{color:var(--green)}
+.tip-icon svg{width:22px;height:22px}
+.tip-card h4{font-size:.9rem;font-weight:600;margin-bottom:.4rem}
+.tip-card p{font-size:.82rem;color:var(--text-secondary);line-height:1.6}
+
+/* ═══ SUPPORT ═══ */
+#support{background:var(--navy)}
+.support-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.support-card{
+  padding:2rem;border-radius:var(--radius);
+  background:var(--card-bg);border:1px solid var(--card-border);
+  backdrop-filter:blur(10px);
+}
+.support-card h3{font-size:1.1rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.support-card h3 svg{width:20px;height:20px;color:var(--accent)}
+.support-item{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.75rem 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.support-item:last-child{border-bottom:none}
+.support-item svg{width:18px;height:18px;color:var(--text-dim);flex-shrink:0}
+.support-item a{color:var(--accent-bright);text-decoration:none;font-size:.9rem;transition:color .2s}
+.support-item a:hover{color:var(--accent)}
+.support-item span{color:var(--text-secondary);font-size:.9rem}
+.support-item .mono{font-family:'IBM Plex Mono',monospace;font-size:.85rem;color:var(--text-primary)}
+.support-cta{
+  display:inline-flex;align-items:center;gap:.5rem;
+  margin-top:1.25rem;padding:.7rem 1.5rem;border-radius:var(--radius-sm);
+  background:rgba(37,150,190,.1);border:1px solid rgba(37,150,190,.2);
+  color:var(--accent-bright);font-size:.85rem;font-weight:500;
+  text-decoration:none;transition:all .25s;
+}
+.support-cta:hover{background:rgba(37,150,190,.15);border-color:rgba(37,150,190,.35)}
+.support-cta svg{width:16px;height:16px}
+
+/* ═══ FOOTER ═══ */
+.site-footer{
+  padding:3rem 2rem;text-align:center;
+  border-top:1px solid rgba(37,150,190,.08);
+  background:var(--navy-deep);
+}
+.footer-brand{
+  font-size:1.1rem;font-weight:700;letter-spacing:.02em;margin-bottom:.5rem;
+}
+.footer-brand span{color:var(--accent)}
+.footer-tagline{
+  font-size:.82rem;color:var(--text-dim);letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:1rem;
+}
+.footer-copy{font-size:.75rem;color:var(--text-dim)}
+.footer-links{display:flex;justify-content:center;gap:1.5rem;margin-bottom:1.5rem}
+.footer-links a{font-size:.8rem;color:var(--text-secondary);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--accent)}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:768px){
+  .header-nav{display:none}
+  .header-phone{display:none}
+  .hero{padding:7rem 1.5rem 3rem}
+  .hero-stats{gap:1.5rem}
+  .hero-stat-value{font-size:1.4rem}
+  section{padding:3rem 1.25rem}
+  .qr-section{flex-direction:column;padding:2rem;text-align:center}
+  .qr-visual{width:140px;height:140px}
+  .setup-tabs{gap:.35rem}
+  .setup-tab{padding:.5rem 1rem;font-size:.8rem}
+  .step{flex-direction:column;gap:1rem}
+  .download-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){
+  .download-grid{grid-template-columns:1fr}
+  .tips-grid{grid-template-columns:1fr}
+  .support-grid{grid-template-columns:1fr}
+}
+
+/* ═══ SCROLL REVEAL ═══ */
+.reveal{opacity:0;transform:translateY(24px);transition:all .7s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<!-- HEADER -->
+<header class="site-header" id="siteHeader">
+  <div class="header-brand">
+    <svg class="header-logo" viewBox="0 0 40 40" fill="none">
+      <path d="M20 2L4 10v12c0 9.3 6.8 18 16 20 9.2-2 16-10.7 16-20V10L20 2z" fill="rgba(37,150,190,.15)" stroke="#2596be" stroke-width="1.5"/>
+      <path d="M18 26l-6-6 2.5-2.5L18 21l7.5-7.5L28 16 18 26z" fill="#27ae60"/>
+    </svg>
+    <div class="header-title">PC Plus <span>Computing</span></div>
+  </div>
+  <nav class="header-nav">
+    <a href="#download">Download</a>
+    <a href="#setup">Setup</a>
+    <a href="#security">Security</a>
+    <a href="#support">Support</a>
+  </nav>
+  <div class="header-phone">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+    236-500-2700
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid-overlay"></div>
+  <div class="hero-content">
+    <div class="shield-container">
+      <div class="shield-ring"></div>
+      <div class="shield-ring"></div>
+      <div class="shield-ring"></div>
+      <div class="shield-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2596be" stroke-width="1.5" stroke-linecap="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9 12l2 2 4-4" stroke="#27ae60" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+    <div class="hero-badge">Encrypted &amp; Secured</div>
+    <h1>Secure Remote<br><span class="gradient-text">Access VPN</span></h1>
+    <p class="hero-sub">Enterprise-grade VPN protection powered by WireGuard. Connect your devices securely from anywhere in the world.</p>
+    <a href="#download" class="hero-cta">
+      Get Connected
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">256-bit</div>
+        <div class="hero-stat-label">Encryption</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">&lt;2ms</div>
+        <div class="hero-stat-label">Latency</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">24/7</div>
+        <div class="hero-stat-label">Monitoring</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section id="download">
+  <div class="section-inner reveal">
+    <div class="section-label">Download</div>
+    <h2 class="section-title">Get the WireGuard Client</h2>
+    <p class="section-desc">Download the official WireGuard client for your device. Your technician will provide a configuration file or QR code.</p>
+    <div class="download-grid">
+      <a href="https://download.wireguard.com/windows-client/wireguard-installer.exe" class="dl-card" target="_blank" rel="noopener">
+        <div class="dl-card-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+        </div>
+        <h3>Windows</h3>
+        <p>Windows 7, 8, 10, 11</p>
+        <span class="dl-badge">Download .exe</span>
+      </a>
+      <a href="https://apps.apple.com/us/app/wireguard/id1451685025" class="dl-card" target="_blank" rel="noopener">
+        <div class="dl-card-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        </div>
+        <h3>macOS</h3>
+        <p>Mac App Store</p>
+        <span class="dl-badge">App Store</span>
+      </a>
+      <a href="https://apps.apple.com/us/app/wireguard/id1441195209" class="dl-card" target="_blank" rel="noopener">
+        <div class="dl-card-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 1h-8C6.12 1 5 2.12 5 3.5v17C5 21.88 6.12 23 7.5 23h8c1.38 0 2.5-1.12 2.5-2.5v-17C18 2.12 16.88 1 15.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z"/></svg>
+        </div>
+        <h3>iOS</h3>
+        <p>iPhone &amp; iPad</p>
+        <span class="dl-badge">App Store</span>
+      </a>
+      <a href="https://play.google.com/store/apps/details?id=com.wireguard.android" class="dl-card" target="_blank" rel="noopener">
+        <div class="dl-card-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 2.236L19.1 4.9l-2.143 1.222C18.18 7.348 19 9.073 19 11H5c0-1.927.82-3.652 2.043-4.878L4.9 4.9l1.577-2.664 2.241 1.278C9.748 3.186 10.836 3 12 3s2.252.186 3.282.514l2.241-1.278zM10 8a1 1 0 100-2 1 1 0 000 2zm4 0a1 1 0 100-2 1 1 0 000 2zM5 12v8h2v-8H5zm12 0v8h2v-8h-2zM7 12v8c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-8H7z"/></svg>
+        </div>
+        <h3>Android</h3>
+        <p>Google Play Store</p>
+        <span class="dl-badge">Play Store</span>
+      </a>
+      <div class="dl-card linux-card">
+        <div class="dl-card-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.368 1.884 1.368.199 0 .39-.029.556-.088.86-.31 1.353-.975 1.518-1.925.135-.783-.115-1.692-.582-2.456-.467-.764-1.09-1.364-1.692-1.594l-.003-.003c-.006 0-.007 0-.013-.003a2.3 2.3 0 00-.156-.063c.031-.582-.242-1.26-.548-1.843-.268-.518-.523-.907-.782-1.456-.063-.137-.122-.277-.18-.42.59-1.005 1.045-2.168 1.122-3.407.06-1.024.009-2.19-.537-3.159-.646-1.143-1.843-1.868-3.326-1.868zm0 .84c1.166 0 2.095.563 2.608 1.471.449.795.503 1.787.449 2.728-.065 1.085-.456 2.125-.985 3.036a5.98 5.98 0 01-.208-.49c-.156-.378-.263-.715-.49-1.264-.225-.537-.5-1.17-1.089-1.613-.39-.293-.852-.371-1.32-.217-.39.13-.668.381-.882.626-.224.258-.395.545-.519.778l-.043.083c-.157.31-.2.455-.485.895-.284.44-.622.774-.857 1.039a6.397 6.397 0 01-1.107-1.588c-.343-.68-.577-1.422-.62-2.212-.042-.752.07-1.562.537-2.201.467-.64 1.265-.979 2.314-.979z"/></svg>
+        </div>
+        <h3>Linux</h3>
+        <p>Install via package manager</p>
+        <span class="dl-badge">See Setup Guide</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SETUP -->
+<section id="setup">
+  <div class="section-inner reveal">
+    <div class="section-label">Setup Guide</div>
+    <h2 class="section-title">Connect in Minutes</h2>
+    <p class="section-desc">Follow the step-by-step instructions for your platform. Your PC Plus Computing technician will provide your configuration file.</p>
+
+    <div class="setup-tabs">
+      <button class="setup-tab active" data-tab="windows">Windows</button>
+      <button class="setup-tab" data-tab="macos">macOS</button>
+      <button class="setup-tab" data-tab="mobile">Mobile</button>
+      <button class="setup-tab" data-tab="linux">Linux</button>
+    </div>
+
+    <div class="setup-panel active" id="tab-windows">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Download WireGuard</h4>
+            <p>Download and install the official WireGuard client for Windows from the link above.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Import Your Tunnel</h4>
+            <p>Open WireGuard, click <code>Import tunnel(s) from file</code>, and select the <code>.conf</code> file provided by your technician.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Activate Connection</h4>
+            <p>Select your tunnel from the list and click <code>Activate</code>. The status will change to "Active" with a green indicator when connected.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-panel" id="tab-macos">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Install from App Store</h4>
+            <p>Download WireGuard from the Mac App Store using the link in the download section above.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Import Configuration</h4>
+            <p>Open WireGuard, click <code>Import Tunnel(s) from File</code>, and select your <code>.conf</code> file. Allow the VPN configuration when prompted.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Connect</h4>
+            <p>Toggle the switch next to your tunnel name to activate the VPN. You'll see the WireGuard icon appear in your menu bar.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-panel" id="tab-mobile">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Install the App</h4>
+            <p>Download WireGuard from the App Store (iOS) or Google Play Store (Android).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Scan Your QR Code</h4>
+            <p>Open the WireGuard app, tap the <code>+</code> button, and select <code>Create from QR code</code>. Point your camera at the QR code provided by your technician.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Connect</h4>
+            <p>Name your tunnel (e.g., "PC Plus VPN") and toggle the switch to connect. Allow VPN configuration when prompted by your device.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-panel" id="tab-linux">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Install WireGuard Tools</h4>
+            <p>Install the WireGuard package for your distribution:<br>
+            <code>sudo apt install wireguard</code> (Debian/Ubuntu)<br>
+            <code>sudo dnf install wireguard-tools</code> (Fedora/RHEL)</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Place Configuration File</h4>
+            <p>Copy the <code>.conf</code> file provided by your technician to the WireGuard directory:<br>
+            <code>sudo cp pcplus-vpn.conf /etc/wireguard/wg0.conf</code></p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Start the Tunnel</h4>
+            <p>Activate the tunnel and optionally enable it at boot:<br>
+            <code>sudo wg-quick up wg0</code><br>
+            <code>sudo systemctl enable wg-quick@wg0</code></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR -->
+    <div class="qr-section">
+      <div class="qr-visual">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/>
+          <rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="4" height="4" rx="1"/>
+          <rect x="18" y="18" width="4" height="4" rx="1"/><rect x="14" y="18" width="4" height="4" rx="1" opacity=".3"/>
+        </svg>
+        <span>QR Code Placeholder</span>
+      </div>
+      <div class="qr-info">
+        <h3>Instant Mobile Setup with QR Code</h3>
+        <p>Mobile users can connect instantly by scanning a QR code. Your PC Plus Computing technician will generate a unique QR code for each device during onboarding.</p>
+        <p>Simply open WireGuard on your phone, tap the + button, select "Create from QR code," and scan. You'll be connected in seconds.</p>
+        <div class="qr-highlight">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+          No manual configuration required for mobile devices
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section id="security">
+  <div class="section-inner reveal">
+    <div class="section-label">Security</div>
+    <h2 class="section-title">Keep Your Connection Secure</h2>
+    <p class="section-desc">Follow these best practices to maintain the highest level of protection.</p>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <div class="tip-icon red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <h4>Protect Your Config File</h4>
+        <p>Your VPN configuration file contains private keys. Store it securely, never upload it to cloud storage, and delete it from email after importing.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <h4>Never Share Credentials</h4>
+        <p>Your VPN credentials are unique to you. Sharing them compromises your security and the entire network. Each user gets their own configuration.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h4>Report Suspicious Activity</h4>
+        <p>If you suspect unauthorized access or notice unusual behavior on your VPN connection, contact us immediately. We monitor 24/7 and can revoke access instantly.</p>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        </div>
+        <h4>Keep Client Updated</h4>
+        <p>Always run the latest version of the WireGuard client. Updates include security patches and performance improvements critical for your protection.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SUPPORT -->
+<section id="support">
+  <div class="section-inner reveal">
+    <div class="section-label">Support</div>
+    <h2 class="section-title">Need Help?</h2>
+    <p class="section-desc">Our team is ready to assist you with setup, troubleshooting, or any questions about your VPN service.</p>
+    <div class="support-grid">
+      <div class="support-card">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          Contact Us
+        </h3>
+        <div class="support-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          <span class="mono">604-760-1662</span>
+        </div>
+        <div class="support-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          <span class="mono">236-500-2700</span>
+        </div>
+        <div class="support-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Hours: 7 AM - 10 PM Daily</span>
+        </div>
+      </div>
+      <div class="support-card">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Online Support
+        </h3>
+        <div class="support-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <a href="https://support.pcpluscomputing.com" target="_blank">Open Support Ticket</a>
+        </div>
+        <div class="support-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <a href="https://support.pcpluscomputing.com" target="_blank">Live Chat</a>
+        </div>
+        <div class="support-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <a href="https://pcpluscomputing.com" target="_blank">pcpluscomputing.com</a>
+        </div>
+        <a href="https://support.pcpluscomputing.com" class="support-cta" target="_blank">
+          Open a Ticket
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+      <div class="support-card">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Emergency
+        </h3>
+        <div class="support-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Suspected breach or unauthorized access</span>
+        </div>
+        <div class="support-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          <span>Call immediately: <span class="mono">236-500-2700</span></span>
+        </div>
+        <div class="support-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Emergency response available 24/7</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="footer-brand">PC Plus <span>Computing</span> Inc.</div>
+  <div class="footer-tagline">Your Security Is Our Priority</div>
+  <div class="footer-links">
+    <a href="https://pcpluscomputing.com" target="_blank">Website</a>
+    <a href="https://support.pcpluscomputing.com" target="_blank">Support</a>
+    <a href="#security">Security</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 PC Plus Computing Inc. All rights reserved. Powered by WireGuard.</div>
+</footer>
+
+</div>
+
+<script>
+// Header scroll
+const header = document.getElementById('siteHeader');
+window.addEventListener('scroll', () => {
+  header.classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// Setup tabs
+document.querySelectorAll('.setup-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.setup-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.setup-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); }});
+}, { threshold: 0.15 });
+reveals.forEach(el => revealObserver.observe(el));
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>
